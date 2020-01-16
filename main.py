@@ -13,7 +13,8 @@ def transliteration(cyrillic_text):
     return latin_text
 
 
-city_rus = input('Введите название города: ')
-# нужно перевести кирилическое написание города в латинское для запроса
-city = transliteration(city_rus)
-print(city)
+if __name__ == '__main__':
+    city_rus = input('Введите название города: ')
+    # нужно перевести кирилическое написание города в латинское для запроса
+    city = transliteration(city_rus)
+    print(city)
