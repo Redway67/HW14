@@ -1,4 +1,5 @@
 import requests
+import datetime
 from bs4 import BeautifulSoup
 
 
@@ -15,6 +16,25 @@ def transliteration(cyrillic_text):
 
 if __name__ == '__main__':
     city_rus = input('Введите название города: ')
+
+    # по умолчанию Москва
+    if len(city_rus) == 0:
+        city_rus = 'Москва'
+
     # нужно перевести кирилическое написание города в латинское для запроса
     city = transliteration(city_rus)
-    print(city)
+    url = f'https://pogoda.mail.ru/prognoz/{city}'
+    print(url)
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        text_temperature = soup.find_all('span', class_="entitem__item-value")
+        max_temperature = text_temperature[0].text.split()
+        min_temperature = text_temperature[1].text.split()
+
+        print(f'В городе {city_rus}  были зарегистрированы:  ')
+        print(f'максимальная температура {max_temperature[0]} в {max_temperature[1]} году')
+        print(f'минимальная {min_temperature[0]} в {min_temperature[1]} году ')
+    else:
+        print(f'Города {city_rus} нет')
