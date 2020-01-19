@@ -1,57 +1,37 @@
-import requests
-import datetime
-from bs4 import BeautifulSoup
+import telebot
+from telebot import apihelper
+from parcer import get_temperature
 
-MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября',
-          'декабря']
+TOKEN = '1014617754:AAHQGgsUEMOZpHs3IZyrUddV4qt10z6HHJI'
+
+apihelper.proxy = {'https': 'https://85.132.71.82:3128'}
+
+bot = telebot.TeleBot(TOKEN)
 
 
-def transliteration(cyrillic_text):
-    cyrillic = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
-    latin = 'a|b|v|g|d|e|e|zh|z|i|i|k|l|m|n|o|p|r|s|t|u|f|kh|tc|ch|sh|shch||y||e|iu|ia'.split('|')
-    cyr_to_lat = {k: v for k, v in zip(cyrillic, latin)}
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    bot.reply_to(message, 'Привет! Это бот сообщающий текущую температуру в выбранном Вами городе. \n'
+                          'А также (если есть) архивной температуры,  \n'
+                          'т.е. минимальной и максимальной в этот день в течении последних ста лет \n\n'
+                          'Для справки наберите /help .')
 
-    latin_text = ''
-    for letter in cyrillic_text:
-        latin_text += cyr_to_lat.get(letter.lower(), letter)
-    return latin_text
+
+@bot.message_handler(commands=['help'])
+def send_welcome(message):
+    bot.reply_to(message, '/t  (Название города) \n'
+                          'Название города для России и стран бывшего СССР можно писать кириллицей. \n'
+                          'Остальные города мира в их правильном написании латиницей. \n '
+                          'По умолчанию будет выбран город Москва')
+
+
+@bot.message_handler(commands=['t'])
+def temperature_info(message):
+    city_name = ' '.join(message.text.split(' ')[1:])
+    city_name = city_name.replace(' ', '')
+    answer = get_temperature(city_name)
+    bot.reply_to(message, answer)
 
 
 if __name__ == '__main__':
-    city_rus = input('Введите название города: ')
-
-    # по умолчанию Москва
-    if len(city_rus) == 0:
-        city_rus = 'Москва'
-
-    # для запроса нужно перевести кирилическое написание города в латинское
-    city = transliteration(city_rus)
-    # какой-то у них на сайте программный косяк с Санкт-Петербургом, остальные города пишутся нормально
-    if city == 'sankt-peterburg':
-        city = 'sankt_peterburg'
-
-    url = f'https://pogoda.mail.ru/prognoz/{city}'
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, 'html.parser')
-
-        temperature = soup.find_all('div', class_="information__content__temperature")
-        today_temperature = temperature[0].text.split()[0]
-        print(f'В городе {city_rus} сейчас {today_temperature}')
-
-        # найдем архивную температуру
-        arx_temperature = soup.find_all('span', class_="entitem__item-value")
-        # если архивной температуры нет, то сайт сообщает зачем-то время восхода и заката
-        if len(arx_temperature) == 4:
-            d = datetime.date.today()
-            month = MONTHS[d.month + 1]
-            max_temperature = arx_temperature[0].text.split()
-            min_temperature = arx_temperature[1].text.split()
-            print(f'Сегодня {d.day} {month}:')
-            print(f'максимальная температура {max_temperature[0]} была в {max_temperature[1]} году')
-            print(f'минимальная {min_temperature[0]} в {min_temperature[1]} году ')
-        else:
-            print('Архивных данных по температуре нет')
-    else:
-        print(f'Города {city_rus} нет')
+    bot.polling()
