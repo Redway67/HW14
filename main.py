@@ -4,7 +4,12 @@ from parcer import get_temperature
 
 TOKEN = '1014617754:AAHQGgsUEMOZpHs3IZyrUddV4qt10z6HHJI'
 
-apihelper.proxy = {'https': 'https://85.132.71.82:3128'}
+proxies = {
+    'http': 'http://51.158.113.142:8811',
+    'https': 'http://51.158.113.142:8811',
+}
+
+apihelper.proxy = proxies
 
 bot = telebot.TeleBot(TOKEN)
 
